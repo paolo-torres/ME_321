@@ -76,8 +76,8 @@ for index = 1:4
     % Bending Stress Number (s_t)
     Ko = 2.00; % Table 9-1
     Ks = 1.00; % Table 9-2
-    Cpf = (F/(10*D(index)))-0.0375+0.0125*F; % Fig. 9-12
-    Cma = 0.127+0.0158*F-(0.0001093)*F^2; % Fig. 9-13
+    Cpf = double((F/(10*D(index)))-0.0375+0.0125*F); % Fig. 9-12
+    Cma = double(0.127+0.0158*F-(0.0001093)*F^2); % Fig. 9-13
     Km = double(1.0+Cpf+Cma);
     Kb = 1.0; % Fig. 9-14
     vt = (double(pi*D(index)*w(index))/12);
@@ -114,3 +114,43 @@ for index = 1:4
     P_cap_t = double((s_at_mat*1000*Yn*F*J(index)*w(index)*D(index))/(126000*Pd*SF*Kr*Ko*Ks*Km*Kb*Kv));
     P_cap_c = double(((w(index)*F*I)/(126000*Ko*Ks*Km*Kv))*((s_ac_mat*1000*D(index)*Zn)/(SF*Kr*Cp))^2);
 end
+
+% Shaft Design
+
+% Torque
+T_shaft = T3*12;
+
+% Forces
+syms RLx WT3 WT4 RRx % Top View
+syms RLy WR3 WR4 RRy % Front View
+
+% Top View Forces (lbs)
+WT3 = double(T3*12/(D3/2));
+WT4 = double((T4*12)/(D4/2));
+RRx = double((-WT3*3.125+WT4*10.625)/13.75);
+RLx = double(-WT3+WT4-RRx);
+
+% Front View Forces (lbs)
+WR3 = WT3*tan(20*pi/180);
+WR4 = WT4*tan(20*pi/180);
+RRy = (WR3*3.125+WR4*10.625)/13.75;
+RLy = WR3+WR4-RRy;
+
+% Moments (lb in)
+M_front = [0 1103 2276 0];
+M_top = [0 422.0 5487 0];
+M_front_max = max(M_front);
+M_top_max = max(M_top);
+M_max = sqrt((M_front_max^2)+(M_top_max^2));
+
+% Design Equation Parameters
+N = 2.5; % Asssumed
+Kt = 3.0; % Asssumed
+sy = 251; % Appendix 3
+sn = 96; % Table 5-2
+Cr = 0.81; % Table 5-3
+Cs = 0.81493128507815697523532994381114; % Table 5-4
+sn_prime = (sn*1000)*Cr*Cs; % psi
+D = ((32*N/pi)*sqrt(((Kt*M_max/sn_prime)^2)+((3/4)*(T_shaft/(sy*1000))^2)))^(1/3); % in
+D_actual = D*1.06; % in
+D_pref = round(D_actual); % Table A2-1
